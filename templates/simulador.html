@@ -1,0 +1,292 @@
+<!-- Sistema SaaS CiviPro | Desenvolvido por João Layon - Full Stack -->
+{% extends "base.html" %}
+
+{% block title %}Simulador de Cenários - CiviPro{% endblock %}
+{% block page_title %}Simulador de Cenários{% endblock %}
+
+{% block content %}
+<div class="mb-6 card bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+  <h3 class="text-lg font-bold mb-2 text-blue-800 dark:text-blue-200">💡 Simulador de Orçamento</h3>
+  <p class="text-sm text-blue-700 dark:text-blue-300">
+    Compare diferentes cenários de orçamento alterando quantidades, preços e tipos de materiais, mão de obra e equipamentos.
+  </p>
+</div>
+
+<div id="defaultValuesNotice" class="mb-6 card bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800" style="display: none;">
+  <h3 class="text-sm font-bold mb-1 text-yellow-800 dark:text-yellow-200">⚠️ Usando Valores Padrão de Mercado</h3>
+  <p class="text-xs text-yellow-700 dark:text-yellow-300">
+    O simulador está usando preços padrão para itens não cadastrados. Para cálculos personalizados, cadastre seus materiais, mão de obra e equipamentos nas respectivas páginas.
+  </p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <div class="card">
+    <h3 class="text-lg font-semibold mb-4">Parâmetros do Projeto</h3>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-2">Área (m²)</label>
+        <input type="number" id="area" value="100" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Tipo de Projeto</label>
+        <select id="projectType" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700">
+          <option value="1.0">Residencial (1.0x)</option>
+          <option value="1.2">Comercial (1.2x)</option>
+          <option value="1.5">Industrial (1.5x)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Nível de Acabamento</label>
+        <select id="finishLevel" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700">
+          <option value="1.0">Simples (1.0x)</option>
+          <option value="1.3">Médio (1.3x)</option>
+          <option value="1.6">Alto (1.6x)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Ajuste de Preços (%)</label>
+        <input type="number" id="priceAdjustment" value="0" min="-50" max="100" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700">
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Simula variação de preços (+/- %)</p>
+      </div>
+      <button onclick="calculateScenario()" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        Calcular Cenário
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 class="text-lg font-semibold mb-4">Resultado da Simulação</h3>
+    <div id="results" class="space-y-4">
+      <p class="text-gray-500 dark:text-gray-400">Configure os parâmetros e clique em "Calcular Cenário"</p>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="card">
+    <h3 class="text-md font-semibold mb-3">Cenário 1: Padrão</h3>
+    <div id="scenario1" class="text-sm space-y-1">
+      <p class="text-gray-500">Aguardando cálculo...</p>
+    </div>
+  </div>
+  <div class="card">
+    <h3 class="text-md font-semibold mb-3">Cenário 2: Econômico (-15%)</h3>
+    <div id="scenario2" class="text-sm space-y-1">
+      <p class="text-gray-500">Aguardando cálculo...</p>
+    </div>
+  </div>
+  <div class="card">
+    <h3 class="text-md font-semibold mb-3">Cenário 3: Premium (+20%)</h3>
+    <div id="scenario3" class="text-sm space-y-1">
+      <p class="text-gray-500">Aguardando cálculo...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const materials = {{ materials|tojson }};
+const labor = {{ labor|tojson }};
+const equipment = {{ equipment|tojson }};
+
+function calculateScenario() {
+  const area = parseFloat(document.getElementById('area').value) || 100;
+  const projectType = parseFloat(document.getElementById('projectType').value);
+  const finishLevel = parseFloat(document.getElementById('finishLevel').value);
+  const priceAdjustment = parseFloat(document.getElementById('priceAdjustment').value) || 0;
+  
+  const multiplier = projectType * finishLevel;
+  
+  const materialResult = calculateMaterialCosts(area, multiplier, priceAdjustment);
+  const laborResult = calculateLaborCosts(area, multiplier, priceAdjustment);
+  const equipmentResult = calculateEquipmentCosts(area, multiplier, priceAdjustment);
+  
+  const usingDefaults = materialResult.usedDefaults || laborResult.usedDefaults || equipmentResult.usedDefaults;
+  document.getElementById('defaultValuesNotice').style.display = usingDefaults ? 'block' : 'none';
+  
+  const materialCosts = materialResult.total;
+  const laborCosts = laborResult.total;
+  const equipmentCosts = equipmentResult.total;
+  
+  const total = materialCosts + laborCosts + equipmentCosts;
+  
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.innerHTML = `
+    <div class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded">
+      <h4 class="font-bold text-xl mb-2">Total Estimado</h4>
+      <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+    </div>
+    <div class="grid grid-cols-3 gap-2 text-center">
+      <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+        <p class="text-xs text-gray-500 dark:text-gray-400">Materiais</p>
+        <p class="font-bold">R$ ${materialCosts.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+        <p class="text-xs text-gray-500">${((materialCosts/total)*100).toFixed(0)}%</p>
+      </div>
+      <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+        <p class="text-xs text-gray-500 dark:text-gray-400">Mão de Obra</p>
+        <p class="font-bold">R$ ${laborCosts.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+        <p class="text-xs text-gray-500">${((laborCosts/total)*100).toFixed(0)}%</p>
+      </div>
+      <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+        <p class="text-xs text-gray-500 dark:text-gray-400">Equipamentos</p>
+        <p class="font-bold">R$ ${equipmentCosts.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+        <p class="text-xs text-gray-500">${((equipmentCosts/total)*100).toFixed(0)}%</p>
+      </div>
+    </div>
+    <div class="text-xs text-gray-500 dark:text-gray-400">
+      <p>Área: ${area}m² | Tipo: ${projectType === 1.0 ? 'Residencial' : projectType === 1.2 ? 'Comercial' : 'Industrial'} | Acabamento: ${finishLevel === 1.0 ? 'Simples' : finishLevel === 1.3 ? 'Médio' : 'Alto'}</p>
+    </div>
+  `;
+  
+  calculateComparison(area, projectType, finishLevel);
+}
+
+function calculateComparison(area, projectType, finishLevel) {
+  const multiplier = projectType * finishLevel;
+  
+  const scenarios = [
+    {id: 'scenario1', adjustment: 0, name: 'Padrão'},
+    {id: 'scenario2', adjustment: -15, name: 'Econômico'},
+    {id: 'scenario3', adjustment: 20, name: 'Premium'}
+  ];
+  
+  scenarios.forEach(scenario => {
+    const matResult = calculateMaterialCosts(area, multiplier, scenario.adjustment);
+    const labResult = calculateLaborCosts(area, multiplier, scenario.adjustment);
+    const eqResult = calculateEquipmentCosts(area, multiplier, scenario.adjustment);
+    const total = matResult.total + labResult.total + eqResult.total;
+    
+    document.getElementById(scenario.id).innerHTML = `
+      <p class="font-bold text-lg mb-2">R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+      <div class="space-y-1">
+        <p class="flex justify-between"><span>Materiais:</span> <span>R$ ${matResult.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span></p>
+        <p class="flex justify-between"><span>Mão de Obra:</span> <span>R$ ${labResult.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span></p>
+        <p class="flex justify-between"><span>Equipamentos:</span> <span>R$ ${eqResult.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span></p>
+      </div>
+    `;
+  });
+}
+
+function calculateMaterialCosts(area, multiplier, adjustment) {
+  const defaultPrices = {
+    'cimento': 35.00,
+    'areia': 80.00,
+    'brita': 90.00,
+    'tijolos': 0.75,
+    'ferro 10mm': 8.50
+  };
+  
+  const quantities = {
+    'cimento': area * 5.0 * multiplier,
+    'areia': area * 0.05 * multiplier,
+    'brita': area * 0.04 * multiplier,
+    'tijolos': area * 15 * multiplier,
+    'ferro 10mm': area * 8.0 * multiplier
+  };
+  
+  const foundItems = new Set();
+  let total = 0;
+  let usedDefaults = false;
+  
+  materials.forEach(mat => {
+    const key = mat.name.toLowerCase();
+    if (quantities[key]) {
+      const adjustedPrice = mat.price * (1 + adjustment / 100);
+      total += quantities[key] * adjustedPrice;
+      foundItems.add(key);
+    }
+  });
+  
+  Object.keys(quantities).forEach(key => {
+    if (!foundItems.has(key)) {
+      const adjustedPrice = defaultPrices[key] * (1 + adjustment / 100);
+      total += quantities[key] * adjustedPrice;
+      usedDefaults = true;
+    }
+  });
+  
+  return { total, usedDefaults };
+}
+
+function calculateLaborCosts(area, multiplier, adjustment) {
+  const defaultDailyRates = {
+    'pedreiro': 200.00,
+    'servente': 120.00,
+    'eletricista': 250.00,
+    'encanador': 250.00,
+    'pintor': 180.00
+  };
+  
+  const days = Math.max(15, area * 0.3 * multiplier);
+  const quantities = {
+    'pedreiro': days * 1.5,
+    'servente': days * 2.0,
+    'eletricista': Math.max(5, days * 0.2),
+    'encanador': Math.max(5, days * 0.2),
+    'pintor': Math.max(3, days * 0.15)
+  };
+  
+  const foundItems = new Set();
+  let total = 0;
+  let usedDefaults = false;
+  
+  labor.forEach(lab => {
+    const key = lab.name.toLowerCase();
+    if (quantities[key]) {
+      const price = lab.daily_rate || lab.price || 0;
+      const adjustedPrice = price * (1 + adjustment / 100);
+      total += quantities[key] * adjustedPrice;
+      foundItems.add(key);
+    }
+  });
+  
+  Object.keys(quantities).forEach(key => {
+    if (!foundItems.has(key)) {
+      const adjustedPrice = defaultDailyRates[key] * (1 + adjustment / 100);
+      total += quantities[key] * adjustedPrice;
+      usedDefaults = true;
+    }
+  });
+  
+  return { total, usedDefaults };
+}
+
+function calculateEquipmentCosts(area, multiplier, adjustment) {
+  const defaultDailyCosts = {
+    'betoneira': 80.00,
+    'andaime': 45.00,
+    'serra circular': 35.00
+  };
+  
+  const days = Math.max(15, area * 0.3 * multiplier);
+  const quantities = {
+    'betoneira': Math.min(days, 30),
+    'andaime': Math.min(days, 20),
+    'serra circular': Math.max(5, days * 0.1)
+  };
+  
+  const foundItems = new Set();
+  let total = 0;
+  let usedDefaults = false;
+  
+  equipment.forEach(eq => {
+    const key = eq.name.toLowerCase();
+    if (quantities[key]) {
+      const price = eq.daily_cost || eq.price || 0;
+      const adjustedPrice = price * (1 + adjustment / 100);
+      total += quantities[key] * adjustedPrice;
+      foundItems.add(key);
+    }
+  });
+  
+  Object.keys(quantities).forEach(key => {
+    if (!foundItems.has(key)) {
+      const adjustedPrice = defaultDailyCosts[key] * (1 + adjustment / 100);
+      total += quantities[key] * adjustedPrice;
+      usedDefaults = true;
+    }
+  });
+  
+  return { total, usedDefaults };
+}
+</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+<!-- Sistema SaaS CiviPro | Desenvolvido por João Layon - Full Stack -->
+{% extends "base.html" %}
+
+{% block title %}Equipamentos - CiviPro{% endblock %}
+{% block page_title %}Equipamentos{% endblock %}
+
+{% block content %}
+<div class="mb-6 card">
+  <h3 class="text-lg font-bold mb-4">Adicionar Equipamento</h3>
+  <form method="POST" action="{{ url_for('equipment_add') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div>
+      <label class="block text-sm font-medium mb-2">Nome *</label>
+      <input type="text" name="name" required placeholder="ex: Betoneira" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-2">Categoria</label>
+      <select name="category" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="geral">Geral</option>
+        <option value="misturador">Misturador</option>
+        <option value="ferramenta">Ferramenta</option>
+        <option value="estrutura">Estrutura</option>
+        <option value="compactacao">Compactação</option>
+        <option value="transporte">Transporte</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-2">Unidade *</label>
+      <select name="unit" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="dia">Dia</option>
+        <option value="hora">Hora</option>
+        <option value="mes">Mês</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-2">Preço (R$) *</label>
+      <input type="number" step="0.01" name="price" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div class="md:col-span-3">
+      <label class="block text-sm font-medium mb-2">Descrição</label>
+      <input type="text" name="description" placeholder="Descrição do equipamento" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div class="flex items-end">
+      <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Adicionar</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3 class="text-lg font-bold mb-4">Lista de Equipamentos</h3>
+  
+  {% if equipment %}
+  <div class="overflow-x-auto">
+    <table class="w-full">
+      <thead>
+        <tr class="border-b border-gray-200 dark:border-gray-700">
+          <th class="text-left py-2">Nome</th>
+          <th class="text-left py-2">Categoria</th>
+          <th class="text-left py-2">Unidade</th>
+          <th class="text-right py-2">Preço (R$)</th>
+          <th class="text-left py-2">Descrição</th>
+          <th class="text-right py-2">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in equipment %}
+        <tr class="border-b border-gray-100 dark:border-gray-800">
+          <td class="py-2">{{ item.name }}</td>
+          <td class="py-2">
+            <span class="px-2 py-1 rounded text-xs bg-gray-100 dark:bg-gray-700">
+              {{ item.category|title }}
+            </span>
+          </td>
+          <td class="py-2">{{ item.unit }}</td>
+          <td class="text-right py-2">{{ "%.2f"|format(item.price) }}</td>
+          <td class="py-2 text-sm text-gray-600 dark:text-gray-400">{{ item.description or '-' }}</td>
+          <td class="text-right py-2">
+            <form method="POST" action="{{ url_for('equipment_delete', equipment_id=item.id) }}" class="inline">
+              <button type="submit" onclick="return confirm('Excluir este equipamento?')" class="text-red-600 dark:text-red-400 hover:underline text-sm">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-gray-500 dark:text-gray-400">Nenhum equipamento cadastrado ainda.</p>
+  {% endif %}
+</div>
+{% endblock %}

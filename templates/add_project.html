@@ -1,0 +1,84 @@
+<!-- Sistema SaaS CiviPro | Desenvolvido por João Layon - Full Stack -->
+{% extends "base.html" %}
+
+{% block title %}Novo Projeto - CiviPro{% endblock %}
+{% block page_title %}Novo Projeto{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="card">
+    <h2 class="text-2xl font-bold mb-6">Adicionar Projeto</h2>
+    
+    <form method="POST">
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-2">Nome do Projeto *</label>
+        <input type="text" name="name" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-2">Cliente</label>
+        <select name="client_id" id="clientSelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">Selecione um cliente (opcional)</option>
+          {% for client in clients %}
+          <option value="{{ client.id }}">{{ client.name }}{% if client.phone %} - {{ client.phone }}{% endif %}</option>
+          {% endfor %}
+          <option value="new">+ Novo Cliente (digitar nome)</option>
+        </select>
+        <input type="text" name="client_name" id="clientNameInput" placeholder="Nome do novo cliente" class="hidden w-full px-3 py-2 mt-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <script>
+        document.getElementById('clientSelect').addEventListener('change', function() {
+          const input = document.getElementById('clientNameInput');
+          if (this.value === 'new') {
+            input.classList.remove('hidden');
+            input.required = true;
+          } else {
+            input.classList.add('hidden');
+            input.required = false;
+          }
+        });
+      </script>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Área (m²) *</label>
+          <input type="number" step="0.01" name="area" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">Tipo de Obra</label>
+          <select name="project_type" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="residencial">Residencial</option>
+            <option value="comercial">Comercial</option>
+            <option value="industrial">Industrial</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">Nível de Acabamento</label>
+          <select name="finish" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="simples">Simples</option>
+            <option value="medio">Médio</option>
+            <option value="alto">Alto</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">Prazo</label>
+          <input type="date" name="deadline" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+      
+      <div class="mb-6">
+        <label class="block text-sm font-medium mb-2">Observações</label>
+        <textarea name="notes" rows="3" placeholder="Detalhes importantes do projeto..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+      </div>
+      
+      <div class="flex gap-4">
+        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Criar Projeto</button>
+        <a href="{{ url_for('projects_list') }}" class="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

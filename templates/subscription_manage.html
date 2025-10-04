@@ -1,0 +1,131 @@
+<!--
+  Sistema SaaS CiviPro | Desenvolvido por João Layon - Desenvolvedor Full Stack
+  Página de gerenciamento de assinatura
+-->
+{% extends "base.html" %}
+{% block title %}Gerenciar Assinatura - CiviPro{% endblock %}
+{% block page_title %}Gerenciar Assinatura{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="card mb-6">
+    <h2 class="text-2xl font-bold mb-4">Status da Assinatura</h2>
+    
+    {% if subscription and subscription.is_trial %}
+    <div class="p-4 bg-blue-100 dark:bg-blue-900 rounded-lg mb-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-2xl">🎉</span>
+        <h3 class="font-bold text-blue-800 dark:text-blue-200">Período de Teste Grátis</h3>
+      </div>
+      <p class="text-blue-700 dark:text-blue-300">
+        Você tem <strong>{{ subscription.days_left }} dia{{ 's' if subscription.days_left != 1 else '' }}</strong> restante{{ 's' if subscription.days_left != 1 else '' }} de teste grátis com acesso total a todos os recursos.
+      </p>
+      <p class="text-sm text-blue-600 dark:text-blue-400 mt-2">
+        Assine um plano para continuar usando o CiviPro após o período de teste.
+      </p>
+      <a href="{{ url_for('subscription_plans') }}" class="inline-block mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+        Ver Planos
+      </a>
+    </div>
+    {% elif subscription and subscription.status == 'active' %}
+    <div class="p-4 bg-green-100 dark:bg-green-900 rounded-lg mb-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-2xl">✅</span>
+        <h3 class="font-bold text-green-800 dark:text-green-200">Assinatura Ativa</h3>
+      </div>
+      <p class="text-green-700 dark:text-green-300">
+        Seu plano <strong>{{ current_plan }}</strong> está ativo.
+      </p>
+      <p class="text-sm text-green-600 dark:text-green-400 mt-1">
+        Cobrança mensal: <strong>R$ {{ "%.2f"|format(current_price) }}</strong>
+      </p>
+    </div>
+    {% else %}
+    <div class="p-4 bg-red-100 dark:bg-red-900 rounded-lg mb-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-2xl">⚠️</span>
+        <h3 class="font-bold text-red-800 dark:text-red-200">Assinatura Inativa</h3>
+      </div>
+      <p class="text-red-700 dark:text-red-300">
+        {% if subscription and subscription.status == 'trial_expired' %}
+        Seu período de teste expirou. Assine um plano para continuar usando o CiviPro.
+        {% else %}
+        Você não possui uma assinatura ativa.
+        {% endif %}
+      </p>
+      <a href="{{ url_for('subscription_plans') }}" class="inline-block mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+        Assinar Agora
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if user.plan_id %}
+  <div class="card mb-6">
+    <h3 class="text-xl font-bold mb-4">Detalhes do Plano</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Plano Atual</p>
+        <p class="font-semibold">{{ current_plan }}</p>
+      </div>
+      <div>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Valor Mensal</p>
+        <p class="font-semibold">R$ {{ "%.2f"|format(current_price) }}</p>
+      </div>
+      <div>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Status</p>
+        <p class="font-semibold">
+          {% if subscription.is_trial %}
+            Em teste grátis
+          {% elif subscription.status == 'active' %}
+            Ativa
+          {% else %}
+            Inativa
+          {% endif %}
+        </p>
+      </div>
+      <div>
+        <p class="text-sm text-gray-500 dark:text-gray-400">ID da Assinatura</p>
+        <p class="font-semibold text-xs">{{ user.subscription_id if user.subscription_id else 'N/A' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 class="text-xl font-bold mb-4">Ações</h3>
+    <div class="space-y-3">
+      <a href="{{ url_for('subscription_plans') }}" class="block p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+        <div class="flex items-center justify-between">
+          <div>
+            <h4 class="font-semibold">Mudar de Plano</h4>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Fazer upgrade ou downgrade do seu plano</p>
+          </div>
+          <span>→</span>
+        </div>
+      </a>
+
+      {% if user.subscription_id and subscription and subscription.status == 'active' %}
+      <form method="POST" action="{{ url_for('cancel_subscription') }}" onsubmit="return confirm('Tem certeza que deseja cancelar sua assinatura? Você perderá acesso aos recursos do CiviPro.')">
+        <button type="submit" class="w-full p-3 border border-red-300 dark:border-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900 text-left">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="font-semibold text-red-600 dark:text-red-400">Cancelar Assinatura</h4>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Seu acesso será mantido até o fim do período pago</p>
+            </div>
+            <span class="text-red-600 dark:text-red-400">✕</span>
+          </div>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="mt-6 card bg-gray-50 dark:bg-gray-800">
+    <h3 class="font-semibold mb-2">Precisa de ajuda?</h3>
+    <p class="text-sm text-gray-600 dark:text-gray-400">
+      Entre em contato com nosso suporte através do email: <a href="mailto:suporte@civipro.com.br" class="text-blue-600 dark:text-blue-400 hover:underline">suporte@civipro.com.br</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

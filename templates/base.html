@@ -1,0 +1,177 @@
+<!--
+  Sistema SaaS CiviPro | Desenvolvido por João Layon - Desenvolvedor Full Stack
+  Template base responsivo com TailwindCSS e toggle tema claro/escuro.
+-->
+<!doctype html>
+<html lang="pt-BR" class="transition-colors">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{% block title %}CiviPro - Engenharia Civil{% endblock %}</title>
+
+    <script>
+      tailwind.config = {
+        darkMode: 'class'
+      }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <meta name="author" content="João Layon - Desenvolvedor Full Stack" />
+
+    <style>
+      .sidebar { min-width: 220px; max-width: 260px; }
+      .content { min-height: calc(100vh - 64px); }
+      .card { @apply bg-white dark:bg-gray-800 shadow rounded-lg p-4; }
+      .dark .card { @apply bg-gray-800 text-gray-100; }
+    </style>
+  </head>
+  <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+    <div class="flex h-screen">
+      {% if session.get('user_id') %}
+      <aside class="sidebar bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 hidden md:block">
+        <div class="mb-6">
+          <h1 class="text-xl font-bold">CiviPro</h1>
+          <p class="text-xs text-gray-500 dark:text-gray-400">SaaS Engenharia Civil</p>
+        </div>
+
+        <nav class="space-y-2 text-sm">
+          <a href="{{ url_for('dashboard') }}" class="flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+            <span>🏠</span> <span>Dashboard</span>
+          </a>
+          <a href="{{ url_for('projects_list') }}" class="flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+            <span>📁</span> <span>Projetos</span>
+          </a>
+          <a href="{{ url_for('clients_list') }}" class="flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+            <span>👤</span> <span>Clientes</span>
+          </a>
+          <a href="{{ url_for('suppliers_list') }}" class="flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+            <span>🏢</span> <span>Fornecedores</span>
+          </a>
+          <a href="{{ url_for('materials_list') }}" class="flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+            <span>🧱</span> <span>Materiais</span>
+          </a>
+          <a href="{{ url_for('labor_list') }}" class="flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+            <span>👷</span> <span>Mão de Obra</span>
+          </a>
+          <a href="{{ url_for('equipment_list') }}" class="flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+            <span>🔧</span> <span>Equipamentos</span>
+          </a>
+          <a href="{{ url_for('reports') }}" class="flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+            <span>📊</span> <span>Relatórios</span>
+          </a>
+          <a href="{{ url_for('simulator') }}" class="flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+            <span>🧮</span> <span>Simulador</span>
+          </a>
+          <hr class="my-2 border-gray-200 dark:border-gray-700">
+          <a href="{{ url_for('subscription_manage') }}" class="flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+            <span>💳</span> <span>Minha Assinatura</span>
+          </a>
+          <a href="{{ url_for('logout') }}" class="flex items-center gap-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-red-500">
+            <span>⎋</span> <span>Sair</span>
+          </a>
+        </nav>
+
+        <div class="mt-6 text-xs text-gray-500 dark:text-gray-400">
+          <p>Versão MVP • Créditos:</p>
+          <p class="mt-1 font-medium">João Layon — Desenvolvedor Full Stack</p>
+        </div>
+      </aside>
+      {% endif %}
+
+      <div class="flex-1 flex flex-col">
+        <header class="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div class="flex items-center gap-4">
+            {% if session.get('user_id') %}
+            <button id="mobileMenuBtn" class="md:hidden p-2 rounded bg-gray-100 dark:bg-gray-700">☰</button>
+            {% endif %}
+            <h2 class="text-lg font-semibold">{% block page_title %}Painel{% endblock %}</h2>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <button id="themeToggle" title="Tema" class="p-2 rounded bg-gray-100 dark:bg-gray-700">☀️/🌙</button>
+
+            {% if session.get('user_id') %}
+            <div class="hidden sm:flex items-center gap-2">
+              <span class="text-sm">{{ current_user().name if current_user() else '' }}</span>
+            </div>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="text-sm px-3 py-1 rounded bg-green-600 text-white">Entrar</a>
+            {% endif %}
+          </div>
+        </header>
+
+        <main class="p-4 overflow-auto content">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="space-y-2 mb-4">
+                {% for cat, msg in messages %}
+                  <div class="p-3 rounded {{ 'bg-green-100 text-green-800' if cat=='success' else 'bg-yellow-100 text-yellow-800' if cat=='warning' else 'bg-red-100 text-red-800' }}">
+                    {{ msg }}
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+
+          {% if session.get('user_id') and subscription_status %}
+            {% if subscription_status.is_trial and subscription_status.active %}
+              <div class="mb-4 p-4 bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-900 dark:to-blue-800 rounded-lg border border-blue-300 dark:border-blue-700">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl">🎁</span>
+                    <div>
+                      <h3 class="font-bold text-blue-800 dark:text-blue-200">
+                        Teste Grátis: {{ subscription_status.days_left }} dia{{ 's' if subscription_status.days_left != 1 else '' }} restante{{ 's' if subscription_status.days_left != 1 else '' }}
+                      </h3>
+                      <p class="text-sm text-blue-700 dark:text-blue-300">
+                        Aproveite todos os recursos do CiviPro. Assine para continuar após o período de teste.
+                      </p>
+                    </div>
+                  </div>
+                  <a href="{{ url_for('subscription_plans') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold whitespace-nowrap">
+                    Ver Planos
+                  </a>
+                </div>
+              </div>
+            {% elif not subscription_status.active %}
+              <div class="mb-4 p-4 bg-gradient-to-r from-red-100 to-red-50 dark:from-red-900 dark:to-red-800 rounded-lg border border-red-300 dark:border-red-700">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl">⚠️</span>
+                    <div>
+                      <h3 class="font-bold text-red-800 dark:text-red-200">Acesso Expirado</h3>
+                      <p class="text-sm text-red-700 dark:text-red-300">
+                        Seu período de teste expirou. Assine um plano para continuar usando o CiviPro.
+                      </p>
+                    </div>
+                  </div>
+                  <a href="{{ url_for('subscription_plans') }}" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-semibold whitespace-nowrap">
+                    Assinar Agora
+                  </a>
+                </div>
+              </div>
+            {% endif %}
+          {% endif %}
+
+          {% block content %}
+          {% endblock %}
+        </main>
+
+        <footer class="px-4 py-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 text-xs">
+          <div class="flex justify-between">
+            <div>© {{ datetime.utcnow().year }} CiviPro</div>
+            <div class="text-right">
+              Sistema desenvolvido por <strong>João Layon</strong> — Desenvolvedor Full Stack
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script>
+      function qs(sel){return document.querySelector(sel)}
+    </script>
+  </body>
+</html>

@@ -1,0 +1,49 @@
+<!-- Sistema SaaS CiviPro | Desenvolvido por João Layon - Full Stack -->
+{% extends "base.html" %}
+
+{% block title %}Projetos - CiviPro{% endblock %}
+{% block page_title %}Projetos{% endblock %}
+
+{% block content %}
+<div class="mb-4 flex justify-between items-center">
+  <h2 class="text-2xl font-bold">Meus Projetos</h2>
+  <a href="{{ url_for('projects_add') }}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">+ Novo Projeto</a>
+</div>
+
+{% if projects %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  {% for proj in projects %}
+  <div class="card">
+    <div class="flex justify-between items-start mb-2">
+      <h3 class="text-lg font-bold">{{ proj.name }}</h3>
+      <span class="px-2 py-1 rounded text-xs
+        {% if proj.status == 'em_andamento' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+        {% elif proj.status == 'concluido' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+        {% else %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200{% endif %}">
+        {% if proj.status == 'em_andamento' %}Em Andamento
+        {% elif proj.status == 'concluido' %}Concluído
+        {% elif proj.status == 'pausado' %}Pausado
+        {% else %}Em Andamento{% endif %}
+      </span>
+    </div>
+    <div class="text-sm space-y-1 mb-4">
+      <p><strong>Cliente:</strong> {{ proj.client or '-' }}</p>
+      <p><strong>Tipo:</strong> 
+        {% if proj.project_type == 'residencial' %}Residencial
+        {% elif proj.project_type == 'comercial' %}Comercial
+        {% elif proj.project_type == 'industrial' %}Industrial
+        {% else %}Residencial{% endif %} | <strong>Área:</strong> {{ proj.area }} m²
+      </p>
+      <p><strong>Acabamento:</strong> {{ proj.finish_level|title }} | <strong>Prazo:</strong> {{ proj.deadline or '-' }}</p>
+    </div>
+    <a href="{{ url_for('project_view', project_id=proj.id) }}" class="text-blue-600 dark:text-blue-400 hover:underline">Ver detalhes →</a>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <p class="text-gray-500 dark:text-gray-400">Nenhum projeto cadastrado ainda.</p>
+  <a href="{{ url_for('projects_add') }}" class="mt-2 inline-block text-blue-600 dark:text-blue-400 hover:underline">Criar primeiro projeto</a>
+</div>
+{% endif %}
+{% endblock %}

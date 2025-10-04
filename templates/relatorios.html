@@ -1,0 +1,143 @@
+<!-- Sistema SaaS CiviPro | Desenvolvido por João Layon - Full Stack -->
+{% extends "base.html" %}
+
+{% block title %}Relatórios - CiviPro{% endblock %}
+{% block page_title %}Relatórios Financeiros{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div class="card bg-blue-50 dark:bg-blue-900">
+    <h3 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Custo Estimado Total</h3>
+    <p class="text-3xl font-bold text-blue-600 dark:text-blue-300">R$ {{ "%.2f"|format(total_estimated) }}</p>
+  </div>
+  
+  <div class="card bg-green-50 dark:bg-green-900">
+    <h3 class="text-sm font-medium text-green-800 dark:text-green-200 mb-2">Custo Real Total</h3>
+    <p class="text-3xl font-bold text-green-600 dark:text-green-300">R$ {{ "%.2f"|format(total_real) }}</p>
+  </div>
+  
+  <div class="card {% if total_real > total_estimated %}bg-red-50 dark:bg-red-900{% else %}bg-green-50 dark:bg-green-900{% endif %}">
+    <h3 class="text-sm font-medium {% if total_real > total_estimated %}text-red-800 dark:text-red-200{% else %}text-green-800 dark:text-green-200{% endif %} mb-2">Diferença</h3>
+    <p class="text-3xl font-bold {% if total_real > total_estimated %}text-red-600 dark:text-red-300{% else %}text-green-600 dark:text-green-300{% endif %}">
+      R$ {{ "%.2f"|format(total_real - total_estimated) }}
+    </p>
+  </div>
+</div>
+
+<div class="card mb-6">
+  <h3 class="text-lg font-bold mb-4">Comparativo de Projetos</h3>
+  <div class="overflow-x-auto">
+    <table class="w-full">
+      <thead>
+        <tr class="border-b border-gray-200 dark:border-gray-700">
+          <th class="text-left py-3 px-2">Projeto</th>
+          <th class="text-left py-3 px-2">Tipo</th>
+          <th class="text-left py-3 px-2">Status</th>
+          <th class="text-right py-3 px-2">Área</th>
+          <th class="text-right py-3 px-2">Estimado</th>
+          <th class="text-right py-3 px-2">Real</th>
+          <th class="text-right py-3 px-2">Diferença</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for proj in projects %}
+        <tr class="border-b border-gray-100 dark:border-gray-800">
+          <td class="py-3 px-2">
+            <a href="{{ url_for('project_view', project_id=proj.id) }}" class="text-blue-600 dark:text-blue-400 hover:underline">
+              {{ proj.name }}
+            </a>
+          </td>
+          <td class="py-3 px-2">
+            {% if proj.project_type == 'residencial' %}Residencial
+            {% elif proj.project_type == 'comercial' %}Comercial
+            {% elif proj.project_type == 'industrial' %}Industrial
+            {% else %}Residencial{% endif %}
+          </td>
+          <td class="py-3 px-2">
+            <span class="px-2 py-1 rounded text-xs
+              {% if proj.status == 'em_andamento' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+              {% elif proj.status == 'concluido' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+              {% else %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200{% endif %}">
+              {% if proj.status == 'em_andamento' %}Em Andamento
+              {% elif proj.status == 'concluido' %}Concluído
+              {% elif proj.status == 'pausado' %}Pausado
+              {% else %}Em Andamento{% endif %}
+            </span>
+          </td>
+          <td class="text-right py-3 px-2">{{ proj.area }} m²</td>
+          <td class="text-right py-3 px-2">R$ {{ "%.2f"|format(proj.estimated_cost or 0) }}</td>
+          <td class="text-right py-3 px-2">R$ {{ "%.2f"|format(proj.real_cost or 0) }}</td>
+          <td class="text-right py-3 px-2 {% if (proj.real_cost or 0) > (proj.estimated_cost or 0) %}text-red-600 dark:text-red-400{% else %}text-green-600 dark:text-green-400{% endif %}">
+            R$ {{ "%.2f"|format((proj.real_cost or 0) - (proj.estimated_cost or 0)) }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h3 class="text-lg font-bold mb-4">Análise de Custos por Projeto</h3>
+  <canvas id="costsChart" height="100"></canvas>
+</div>
+
+<script>
+const ctx = document.getElementById('costsChart');
+if (ctx) {
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: [{% for proj in projects[:10] %}'{{ proj.name[:20] }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+      datasets: [
+        {
+          label: 'Custo Estimado (R$)',
+          data: [{% for proj in projects[:10] %}{{ proj.estimated_cost or 0 }}{% if not loop.last %}, {% endif %}{% endfor %}],
+          backgroundColor: 'rgba(59, 130, 246, 0.5)',
+          borderColor: 'rgb(59, 130, 246)',
+          borderWidth: 1
+        },
+        {
+          label: 'Custo Real (R$)',
+          data: [{% for proj in projects[:10] %}{{ proj.real_cost or 0 }}{% if not loop.last %}, {% endif %}{% endfor %}],
+          backgroundColor: 'rgba(16, 185, 129, 0.5)',
+          borderColor: 'rgb(16, 185, 129)',
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { 
+          display: true,
+          labels: {
+            color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
+          }
+        }
+      },
+      scales: {
+        y: { 
+          beginAtZero: true,
+          ticks: {
+            color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
+          },
+          grid: {
+            color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb'
+          }
+        },
+        x: {
+          ticks: {
+            color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
+          },
+          grid: {
+            color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb'
+          }
+        }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

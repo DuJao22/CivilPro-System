@@ -1,0 +1,117 @@
+<!--
+  Sistema SaaS CiviPro | Desenvolvido por João Layon - Desenvolvedor Full Stack
+  Página de planos e preços
+-->
+{% extends "base.html" %}
+{% block title %}Planos e Preços - CiviPro{% endblock %}
+{% block page_title %}Planos e Preços{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+  {% if subscription and subscription.is_trial %}
+  <div class="mb-6 p-4 bg-blue-100 dark:bg-blue-900 rounded-lg border border-blue-300 dark:border-blue-700">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">🎉</span>
+      <div>
+        <h3 class="font-bold text-blue-800 dark:text-blue-200">Teste Grátis Ativo!</h3>
+        <p class="text-sm text-blue-700 dark:text-blue-300">
+          Você tem <strong>{{ subscription.days_left }} dia{{ 's' if subscription.days_left != 1 else '' }}</strong> restante{{ 's' if subscription.days_left != 1 else '' }} de teste grátis. 
+          Escolha um plano para continuar usando após o período de teste.
+        </p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="text-center mb-8">
+    <h1 class="text-3xl font-bold mb-2">Escolha o plano ideal para você</h1>
+    <p class="text-gray-600 dark:text-gray-400">7 dias de teste grátis em todos os planos. Cancele quando quiser.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    {% for plan in plans %}
+    <div class="card relative {% if plan.get('popular') %}border-2 border-green-500 transform scale-105{% else %}border border-gray-200 dark:border-gray-700{% endif %}">
+      {% if plan.get('popular') %}
+      <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+        MAIS POPULAR
+      </div>
+      {% endif %}
+      
+      <div class="text-center mb-6">
+        <h3 class="text-2xl font-bold mb-2">{{ plan.name }}</h3>
+        <div class="flex items-baseline justify-center gap-1">
+          <span class="text-sm">R$</span>
+          <span class="text-4xl font-bold">{{ "%.2f"|format(plan.price) }}</span>
+          <span class="text-sm text-gray-500 dark:text-gray-400">/mês</span>
+        </div>
+      </div>
+
+      <ul class="space-y-3 mb-6">
+        {% for feature in plan.features %}
+        <li class="flex items-start gap-2">
+          <span class="text-green-500 mt-1">✓</span>
+          <span class="text-sm">{{ feature }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+
+      <button 
+        onclick="subscribePlan('{{ plan.id }}', '{{ plan.name }}', {{ plan.price }})"
+        class="w-full py-3 rounded-lg font-semibold transition-colors {% if plan.get('popular') %}bg-green-600 hover:bg-green-700 text-white{% else %}bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600{% endif %}">
+        {% if subscription and subscription.is_trial %}
+          Assinar Agora
+        {% else %}
+          Começar Teste Grátis
+        {% endif %}
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="mt-12 card">
+    <h3 class="text-xl font-bold mb-4">Perguntas Frequentes</h3>
+    <div class="space-y-4 text-sm">
+      <div>
+        <h4 class="font-semibold mb-1">Como funciona o teste grátis?</h4>
+        <p class="text-gray-600 dark:text-gray-400">Você tem 7 dias para testar todos os recursos do plano escolhido. Sem compromisso e sem precisar inserir cartão de crédito inicialmente.</p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-1">Posso cancelar quando quiser?</h4>
+        <p class="text-gray-600 dark:text-gray-400">Sim! Você pode cancelar sua assinatura a qualquer momento diretamente no painel de configurações.</p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-1">Quais são as formas de pagamento?</h4>
+        <p class="text-gray-600 dark:text-gray-400">Aceitamos cartão de crédito, PIX e boleto bancário através do Mercado Pago.</p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-1">Posso mudar de plano depois?</h4>
+        <p class="text-gray-600 dark:text-gray-400">Sim! Você pode fazer upgrade ou downgrade do seu plano a qualquer momento.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function subscribePlan(planId, planName, price) {
+  {% if not session.get('user_id') %}
+    window.location.href = '{{ url_for("register") }}';
+    return;
+  {% endif %}
+  
+  if (confirm(`Deseja assinar o plano ${planName} por R$ ${price.toFixed(2)}/mês?`)) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url_for("create_subscription") }}';
+    
+    const planInput = document.createElement('input');
+    planInput.type = 'hidden';
+    planInput.name = 'plan_id';
+    planInput.value = planId;
+    
+    form.appendChild(planInput);
+    document.body.appendChild(form);
+    form.submit();
+  }
+}
+</script>
+{% endblock %}

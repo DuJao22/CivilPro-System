@@ -1,0 +1,123 @@
+<!-- Sistema SaaS CiviPro | Desenvolvido por João Layon - Full Stack -->
+{% extends "base.html" %}
+
+{% block title %}Clientes - CiviPro{% endblock %}
+{% block page_title %}Clientes{% endblock %}
+
+{% block content %}
+<div class="mb-6 card">
+  <h3 class="text-lg font-bold mb-4">Adicionar Cliente</h3>
+  <form method="POST" action="{{ url_for('clients_add') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div>
+      <label class="block text-sm font-medium mb-2">Nome *</label>
+      <input type="text" name="name" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-2">Email</label>
+      <input type="email" name="email" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-2">Telefone</label>
+      <input type="text" name="phone" placeholder="(11) 99999-9999" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-2">CPF/CNPJ</label>
+      <input type="text" name="cpf_cnpj" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div class="md:col-span-2">
+      <label class="block text-sm font-medium mb-2">Endereço</label>
+      <input type="text" name="address" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+    <div class="flex items-end">
+      <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Adicionar</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3 class="text-lg font-bold mb-4">Lista de Clientes</h3>
+  
+  {% if clients %}
+  <div class="overflow-x-auto">
+    <table class="w-full">
+      <thead>
+        <tr class="border-b border-gray-200 dark:border-gray-700">
+          <th class="text-left py-2">Nome</th>
+          <th class="text-left py-2">Email</th>
+          <th class="text-left py-2">Telefone</th>
+          <th class="text-left py-2">CPF/CNPJ</th>
+          <th class="text-right py-2">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for client in clients %}
+        <tr class="border-b border-gray-100 dark:border-gray-800" id="client-{{ client.id }}">
+          <td class="py-2">
+            <span class="view-mode">{{ client.name }}</span>
+            <input type="text" class="edit-mode hidden w-full px-2 py-1 border rounded" value="{{ client.name }}" data-field="name">
+          </td>
+          <td class="py-2 text-sm">
+            <span class="view-mode">{{ client.email or '-' }}</span>
+            <input type="email" class="edit-mode hidden w-full px-2 py-1 border rounded" value="{{ client.email or '' }}" data-field="email">
+          </td>
+          <td class="py-2 text-sm">
+            <span class="view-mode">{{ client.phone or '-' }}</span>
+            <input type="text" class="edit-mode hidden w-full px-2 py-1 border rounded" value="{{ client.phone or '' }}" data-field="phone">
+          </td>
+          <td class="py-2 text-sm">
+            <span class="view-mode">{{ client.cpf_cnpj or '-' }}</span>
+            <input type="text" class="edit-mode hidden w-full px-2 py-1 border rounded" value="{{ client.cpf_cnpj or '' }}" data-field="cpf_cnpj">
+          </td>
+          <td class="text-right py-2">
+            <button onclick="editClient({{ client.id }})" class="edit-btn text-blue-600 dark:text-blue-400 hover:underline text-sm mr-2">Editar</button>
+            <button onclick="saveClient({{ client.id }})" class="save-btn hidden text-green-600 dark:text-green-400 hover:underline text-sm mr-2">Salvar</button>
+            <button onclick="cancelEdit({{ client.id }})" class="cancel-btn hidden text-gray-600 dark:text-gray-400 hover:underline text-sm mr-2">Cancelar</button>
+            <form method="POST" action="{{ url_for('clients_delete', client_id=client.id) }}" class="inline">
+              <button type="submit" onclick="return confirm('Excluir este cliente?')" class="text-red-600 dark:text-red-400 hover:underline text-sm">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-gray-500 dark:text-gray-400">Nenhum cliente cadastrado ainda.</p>
+  {% endif %}
+</div>
+
+<script>
+function editClient(id) {
+  const row = document.getElementById(`client-${id}`);
+  row.querySelectorAll('.view-mode').forEach(el => el.classList.add('hidden'));
+  row.querySelectorAll('.edit-mode').forEach(el => el.classList.remove('hidden'));
+  row.querySelector('.edit-btn').classList.add('hidden');
+  row.querySelector('.save-btn').classList.remove('hidden');
+  row.querySelector('.cancel-btn').classList.remove('hidden');
+}
+
+function cancelEdit(id) {
+  const row = document.getElementById(`client-${id}`);
+  row.querySelectorAll('.view-mode').forEach(el => el.classList.remove('hidden'));
+  row.querySelectorAll('.edit-mode').forEach(el => el.classList.add('hidden'));
+  row.querySelector('.edit-btn').classList.remove('hidden');
+  row.querySelector('.save-btn').classList.add('hidden');
+  row.querySelector('.cancel-btn').classList.add('hidden');
+}
+
+function saveClient(id) {
+  const row = document.getElementById(`client-${id}`);
+  const formData = new FormData();
+  row.querySelectorAll('.edit-mode').forEach(input => {
+    formData.append(input.dataset.field, input.value);
+  });
+  
+  fetch(`/clients/${id}/edit`, {
+    method: 'POST',
+    body: formData
+  }).then(() => {
+    location.reload();
+  });
+}
+</script>
+{% endblock %}
